@@ -16,8 +16,8 @@ function App() {
     try {
       setLoading(true);
       setEnhancedStory("");
-
-      const response = await fetch("http://localhost:5000/enhance-story", {
+      const response=await fetch("https://story-scene.onrender.com",{
+      // const response = await fetch("http://localhost:5000/enhance-story", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
