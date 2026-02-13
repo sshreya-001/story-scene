@@ -105,8 +105,6 @@
 
 
 
-
-
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -114,11 +112,13 @@ import OpenAI from "openai";
 
 dotenv.config();
 
+console.log("🔑 GROQ KEY EXISTS:", !!process.env.GROQ_API_KEY);
+
 const app = express();
 
-// CORS: Allow only frontend origin
+// CORS: Allow only your Vercel frontend
 app.use(cors({
-  origin: "https://story-scene.vercel.app" // ⚡ Remove trailing slash
+  origin: "https://story-scene.vercel.app"
 }));
 
 app.use(express.json());
@@ -130,11 +130,17 @@ const openai = new OpenAI({
 
 app.post("/enhance-story", async (req, res) => {
   try {
+    console.log("📩 Incoming request received");
+
     const { story, tone, language } = req.body;
 
     if (!story) {
+      console.log("❌ No story provided");
       return res.status(400).json({ error: "Story is required." });
     }
+
+    console.log("🎭 Tone:", tone);
+    console.log("🌐 Language:", language);
 
     let languageInstruction = "";
 
@@ -166,6 +172,8 @@ Story:
 ${story}
 `;
 
+    console.log("🚀 Calling Groq API...");
+
     const completion = await openai.chat.completions.create({
       model: "llama-3.1-8b-instant",
       stream: true,
@@ -175,22 +183,34 @@ ${story}
       ],
     });
 
+    // Streaming headers
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Transfer-Encoding", "chunked");
 
     for await (const chunk of completion) {
       const content = chunk.choices[0]?.delta?.content;
-      if (content) res.write(content);
+      if (content) {
+        res.write(content);
+      }
     }
 
     res.end();
+    console.log("✅ Response streamed successfully");
+
   } catch (error) {
-    console.error("Backend Error:", error);
-    res.status(500).send("Error generating story");
+    console.error("❌ Backend Error:", error);
+
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: error.message,
+      });
+    }
   }
 });
 
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
