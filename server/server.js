@@ -10,7 +10,7 @@ const app = express();
 
 // app.use(cors());
 app.use(cors({
-  origin: "https://story-scene.vercel.app/"
+  origin: "https://story-scene.vercel.app"
 }));
 app.use(express.json());
 
